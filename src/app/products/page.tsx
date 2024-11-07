@@ -3,15 +3,18 @@ import { useQuery } from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 import axios from 'axios';
 import {usePathname, useRouter, useSearchParams} from 'next/navigation';
+import { current } from '@reduxjs/toolkit';
 
 export default function ProductsPage(){
-    const [page, setPage] = useState(1)
-    const [search, setSearch] = useState('')
-    const [category, setCategory] = useState('')
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    const [isFirstRender, setIsFirstRender] = useState(true)
+    const [page, setPage] = useState(1)
+    const [search, setSearch] = useState('')
+    const [category, setCategory] = useState('')
+    
     const {data, error} = useQuery({
         queryKey: ['getProducts', search, page, category], 
         queryFn: async() => {
@@ -19,7 +22,7 @@ export default function ProductsPage(){
                 params: {
                     page, 
                     search, 
-                    category
+                    categoryId: category
                 }
             })
 
@@ -28,10 +31,25 @@ export default function ProductsPage(){
     })
     
     useEffect(() => {
+        if(isFirstRender) return setIsFirstRender(false)
+
         const currentUrl = new URLSearchParams(searchParams);
-        currentUrl.set(`page`, page.toString())
-        if(search) currentUrl.set(`search`, search)
-        if(category) currentUrl.set(`category`, category)
+
+        if(search){
+            currentUrl.set(`search`, search)
+        }else{
+            currentUrl.delete('search')
+        }
+        if(page){
+            currentUrl.set(`page`, page.toString())
+        }else{
+            currentUrl.delete('page')
+        }
+        if(category){
+            currentUrl.set(`category`, category)
+        }else{
+            currentUrl.delete('category')
+        }
         router.push(`${pathname}?${currentUrl.toString()}`)
     }, [page, search, category])
 
